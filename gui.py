@@ -2,6 +2,7 @@ import tkinter as tk
 import tkinter.messagebox
 import tkinter.filedialog
 from read_file import ReadExcel
+import os
 
 
 class App:
@@ -10,7 +11,7 @@ class App:
         self.var = tk.StringVar()
         self.names = tk.StringVar()
         self.list = None
-        self.sign = True
+        self.sign = ""
         self.text = None
         self.data = None
 
@@ -35,9 +36,7 @@ class App:
         frame2 = tk.Frame(self.root)
         frame2.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
 
-        # 第4步，place 放置方法（精准的放置到指定坐标点的位置上）
         tk.Label(frame1, textvariable=self.var, font=('Arial', 12), height=2, width=2, bg="white").pack(fill=tk.X, pady=2)
-        # tk.Text(frame1).pack(side=tk.LEFT)
         self.list = tk.Listbox(frame1)
         self.list.pack(fill=tk.BOTH, expand=1, pady=2)
         self.text = tk.Text(frame2)
@@ -47,7 +46,10 @@ class App:
         tk.Button(frame2, text="Text", command=self.button).pack(fill=tk.BOTH, expand=1)
 
     def button(self):
-        print(self.list.get(self.list.curselection()))
+        self.generate_applescript(self.data.wechat[self.list.get(self.list.curselection())])
+        self.root.clipboard_clear()
+        self.root.clipboard_append(self.text.get("1.0", tk.END))
+        self.run_applescript()
 
     def import_file(self):
         filename = tkinter.filedialog.askopenfilename()
@@ -63,11 +65,34 @@ class App:
 
     def refresh_data(self, *args):
         try:
-            self.var = self.list.get(self.list.curselection())
+            name = self.list.get(self.list.curselection())
+            self.var.set(name)
         except Exception:
             return -1
-        self.text.delete("1.0", tk.END)
-        self.text.insert(tk.END, self.data.all_info[self.var])
+        if self.sign != name:
+            self.sign = name
+            self.text.delete("1.0", tk.END)
+            self.text.insert(tk.END, self.data.all_info[name])
+
+    def generate_applescript(self, wechat):
+        script_model = """tell application "WeChat" to activate
+tell application "System Events"
+    tell process "WeChat"
+        click menu item "查找…" of menu "编辑" of menu bar item "编辑" of menu bar 1
+        keystroke "%s"
+        delay 0.5
+        key code 76
+        key code 48 using {command down}
+        key code 48 using {command down}
+        key code 9 using {command down}
+        -- key code 76
+    end tell
+end tell""" % wechat
+        with open("temp.applescript", "w") as file:
+            file.write(script_model)
+
+    def run_applescript(self):
+        os.system("osascript temp.applescript")
 
 
 
@@ -75,3 +100,4 @@ if __name__ == '__main__':
     root = tk.Tk()
     app = App(root=root)
     root.mainloop()
+
