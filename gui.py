@@ -19,7 +19,7 @@ class App:
 
     def init_window(self):
         self.root.title('自动回访')
-        self.root.geometry('600x400+%d+%d' % (self.root.winfo_screenwidth()/2 - 300, self.root.winfo_screenheight()/2 - 200))
+        self.root.geometry('800x400+%d+%d' % (self.root.winfo_screenwidth()/2 - 300, self.root.winfo_screenheight()/2 - 200))
         self.root.resizable(width=False, height=False)
 
         # self.var.set("请导入文件")
@@ -40,8 +40,15 @@ class App:
 
         # tk.Label(frame1, textvariable=self.var, font=('Arial', 12), height=2, width=2, bg="white").pack(fill=tk.X, pady=2)
         self.list = tk.Listbox(frame1)
-        self.list.pack(fill=tk.BOTH, expand=1, pady=2)
-        self.list.bind("<ButtonRelease-1>", self.refresh_data, add=True)
+        self.list.pack(fill=tk.BOTH, expand=1)
+        self.list.bind("<ButtonRelease-1>", self.refresh_data)
+
+        # 创建并添加滚轮
+        scroll = tk.Scrollbar(self.list, command=self.list.yview)
+        scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.list.config(yscrollcommand=scroll.set)
+
         self.text = tk.Text(frame2)
         self.text.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
