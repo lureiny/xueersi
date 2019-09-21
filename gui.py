@@ -108,7 +108,7 @@ class App:
 
         # 清空列表
         self.list.delete(0, self.list.size()-1)
-        for name in self.data.grade.keys():
+        for name in self.data.all_info.keys():
             self.list.insert(1, name)
 
     def refresh_data(self, event):
