@@ -130,8 +130,10 @@ tell application "System Events"
         %s
     end tell
 end tell"""
-        temp = """click menu item "查找…" of menu "编辑" of menu bar item "编辑" of menu bar 1
-        keystroke "%s"
+        temp = """set the clipboard to "%s"
+        click menu item "查找…" of menu "编辑" of menu bar item "编辑" of menu bar 1
+        key code 9 using {command down}
+        delay 0.5
         key code 76
         key code 48 using {command down}
         delay 0.1
