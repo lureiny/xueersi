@@ -2,6 +2,7 @@ from read_file import ReadExcel, ReadError, GradeError, ComprehensionError, Mode
 import openpyxl
 import os
 import pathlib
+import time
 
 
 class CLI:
@@ -87,24 +88,31 @@ class CLI:
             return ReadExcel(self.file)
         except ReadError as e:
             print("\033[0;30;41m{}\033[0m".format(e.__str__()))
+            time.sleep(5)
             exit(-1)
         except GradeError as e:
             print("\033[0;30;41m{}\033[0m".format(e.__str__()))
+            time.sleep(5)
             exit(-1)
         except ComprehensionError as e:
             print("\033[0;30;41m{}\033[0m".format(e.__str__()))
+            time.sleep(5)
             exit(-1)
         except ModelError as e:
             print("\033[0;30;41m{}\033[0m".format(e.__str__()))
+            time.sleep(5)
             exit(-1)
         except WeChatError as e:
             print("\033[0;30;41m{}\033[0m".format(e.__str__()))
+            time.sleep(5)
             exit(-1)
         except openpyxl.utils.exceptions.InvalidFileException:
             print("\033[0;30;41m{}\033[0m".format("文件格式错误，请修改文件为xlsx格式的文件"))
+            time.sleep(5)
             exit(-1)
         except Exception as e:
             print("\033[0;30;41m{}\033[0m".format(e.__str__()))
+            time.sleep(5)
             exit(-1)
 
     def make_index(self):
