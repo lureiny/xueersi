@@ -1,11 +1,12 @@
 from read_file import ReadExcel, ReadError, GradeError, ComprehensionError, ModelError, WeChatError
 import openpyxl
 import os
+import pathlib
 
 
 class CLI:
     def __init__(self, file):
-        self.file = file
+        self.file = pathlib.Path(__file__).absolute().parent / file
         self.data = self.read_file()
         self.index = dict()                            # 存放索引
         self.sended = set()                            # 存放已经发送的
