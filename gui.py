@@ -58,15 +58,13 @@ class App:
 
     def send(self):
         try:
-            self.send_to_one(self.list.get(self.list.curselection()), self.text.get("1.0", tk.END))
+            self.send_to_one(self.list.get(self.list.curselection()))
             self.list.itemconfigure(self.list.curselection(), background="red", foreground="white", selectbackground="red")
         except Exception:
             tk.messagebox.showerror(title="Error", message="请先导入Excel文件或选择需要发送信息的学生")
 
-    def send_to_one(self, student, info):
-        self.generate_applescript(self.data.wechat[student])
-        self.root.clipboard_clear()
-        self.root.clipboard_append(info)
+    def send_to_one(self, student):
+        self.generate_applescript(student)
         self.run_applescript()
 
     def auto_send(self):
@@ -77,7 +75,7 @@ class App:
                     raise Exception
                 for index in range(self.list.size()):
                     student = self.list.get(index)
-                    self.send_to_one(student=student, info=self.data.all_info[student])
+                    self.send_to_one(student=student)
                     self.list.itemconfigure(index, background="red", foreground="white", selectbackground="red")
         except Exception:
             tk.messagebox.showerror(title="Error", message="请先导入Excel文件")
@@ -110,7 +108,7 @@ class App:
 
         # 清空列表
         self.list.delete(0, self.list.size()-1)
-        for name in self.data.grade.keys():
+        for name in self.data.all_info.keys():
             self.list.insert(1, name)
 
     def refresh_data(self, event):
@@ -125,21 +123,28 @@ class App:
             self.text.delete("1.0", tk.END)
             self.text.insert(tk.END, self.data.all_info[name])
 
-    @staticmethod
-    def generate_applescript(wechat):
+    def generate_applescript(self, name):
         script_model = """tell application "WeChat" to activate
 tell application "System Events"
     tell process "WeChat"
+        %s
+    end tell
+end tell"""
+        temp = """set the clipboard to "%s"
         click menu item "查找…" of menu "编辑" of menu bar item "编辑" of menu bar 1
-        keystroke "%s"
+        key code 9 using {command down}
         delay 0.5
         key code 76
         key code 48 using {command down}
+        delay 0.1
         key code 48 using {command down}
+        delay 0.1
+        set the clipboard to "%s"
         key code 9 using {command down}
-        -- key code 76
-    end tell
-end tell""" % wechat
+        key code 76
+        """ % (self.data.wechat[name], self.data.all_info[name])
+
+        script_model = script_model % temp
         with open("temp.applescript", "w") as file:
             file.write(script_model)
 
