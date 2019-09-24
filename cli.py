@@ -58,6 +58,7 @@ class CLI:
                 print(e)
                 return -1
         elif index == 0:
+            return -1
             return self.auto_send()
         else:
             print("\033[0;30;41m{}\033[0m".format("您输入学生不存在！"))
@@ -65,7 +66,7 @@ class CLI:
 
     def send_to_one(self, student):
         self.generate_applescript(self.data.wechat[student], self.data.all_info[student])
-        # self.run_applescript()
+        self.run_applescript()
 
     def auto_send(self):
         try:
