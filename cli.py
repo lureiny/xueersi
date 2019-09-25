@@ -58,15 +58,28 @@ class CLI:
                 print(e)
                 return -1
         elif index == 0:
-            return -1
-            return self.auto_send()
+            user_input = input("还有%d名学生没有发送回访信息，是否开始自动发送 yes/[no]：" % len(self.sending))
+            if user_input == "yes":
+                print("\033[0;30;41m{}\033[0m".format("开始自动发送"))
+                self.auto_send()
+                print("\033[0;30;41m{}\033[0m".format("自动发送结束"))
+
         else:
             print("\033[0;30;41m{}\033[0m".format("您输入学生不存在！"))
             return -1
 
-    def send_to_one(self, student):
-        self.generate_applescript(self.data.wechat[student], self.data.all_info[student])
-        self.run_applescript()
+    def send_to_one(self, student, auto=False):
+        sign = True if self.data.wechat[student][0] and self.data.wechat[student][1] else False
+        if self.data.wechat[student][0]:
+            self.generate_applescript(self.data.wechat[student][0], self.data.all_info[student][0], auto=auto)
+            self.run_applescript()
+
+        if sign and not auto:
+            input("敲击回车开始给家长发送\n")
+
+        if self.data.wechat[student][1]:
+            self.generate_applescript(self.data.wechat[student][1], self.data.all_info[student][1], auto=auto)
+            self.run_applescript()
 
     def auto_send(self):
         try:
@@ -76,7 +89,7 @@ class CLI:
             temp = sorted(self.sending)
             for index in temp:
                 student = self.index[index]
-                self.send_to_one(student=student)
+                self.send_to_one(student=student, auto=True)
                 self.sended.add(index)
                 self.sending.remove(index)
             return 1
@@ -124,7 +137,8 @@ class CLI:
             index += 1
 
     @staticmethod
-    def generate_applescript(wechat, info):
+    def generate_applescript(wechat, info, auto=False):
+        s = "  " if auto else "   --"
         script_model = """tell application "WeChat" to activate
 tell application "System Events"
     tell process "WeChat"
@@ -137,9 +151,9 @@ tell application "System Events"
         key code 48 using {command down}
         set the clipboard to "%s"
         key code 9 using {command down}
-        -- key code 76
+     %s key code 76
     end tell
-end tell""" % (wechat, info)
+end tell""" % (wechat, info, s)
         with open("temp.applescript", "w") as file:
             file.write(script_model)
 
