@@ -190,6 +190,8 @@ class ReadExcel:
         return lack_student
 
     def generate_one_info(self, name, grade, error_nums, class_):
+        if len(name) == 3:
+            name = name[1:]
         comprehension = ""
         if class_ == 1:
             for num in error_nums:
@@ -214,4 +216,4 @@ class ReadExcel:
 if __name__ == '__main__':
     r = ReadExcel("test.xlsx")
 
-    print(r.all_info)
+    # print(r.all_info)
