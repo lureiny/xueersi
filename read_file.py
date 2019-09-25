@@ -12,7 +12,8 @@ class ReadExcel:
         self.comprehension1 = dict()      # 存放第一个班解析
         self.comprehension2 = dict()      # 存放第二个班解析
         self.wechat = dict()              # 存放学生对应的wechat
-        self.model = None                 # 存放模板
+        self.model_student = None         # 存放发给学生的模板
+        self.model_parents = None         # 存放发给家长的模板
         self.error_nums1 = set()          # 记录第一个班全部学生产生的错题
         self.error_nums2 = set()          # 记录第二个班全部学生产生的错题
         self.all_info = dict()            # 记录全部学生的回访信息
@@ -40,7 +41,7 @@ class ReadExcel:
 
         error_nums = self.check_grade()
         if error_nums:
-            raise GradeError("grade表的第{}行有空值".format("，".join(error_nums)))
+            raise GradeError("grade表的第{}行有空值或插入的数据不合法".format("，".join(error_nums)))
 
         error_nums = self.check_comprehension1()
         if error_nums:
@@ -91,7 +92,7 @@ class ReadExcel:
         for row in self.grade_ws.iter_rows(min_row=2, max_row=self.grade_ws.max_row):
             name, grade, error_nums, class_ = row
 
-            if not (name.value and grade.value != None and class_.value):
+            if not (name.value and grade.value != None and class_.value and (class_.value == 1 or class_.value == 2)):
                 error_rows.append(str(row_num))
                 row_num += 1
                 continue
@@ -109,12 +110,17 @@ class ReadExcel:
         return error_rows
 
     def check_model(self):
-        self.model = tuple((self.model_ws["A1"].value, self.model_ws["B1"].value, self.model_ws["C1"].value))
-        if not (self.model[0] and self.model[1] and self.model[2]):
+        self.model_student = tuple((self.model_ws["A1"].value, self.model_ws["B1"].value, self.model_ws["C1"].value))
+        self.model_parents = tuple((self.model_ws["A2"].value, self.model_ws["B2"].value, self.model_ws["C2"].value))
+        if not (self.model_student[0] and self.model_student[1] and self.model_student[2] and \
+                self.model_parents[0] and self.model_parents[1] and self.model_parents[2]):
             raise ModelError("model表中缺少模版")
-        if "{姓名}" in self.model[0] and "{成绩}" in self.model[0] and "{错题解析}" in self.model[0] and \
-           "{姓名}" in self.model[1] and "{成绩}" in self.model[1] and "{错题解析}" in self.model[1] and \
-           "{姓名}" in self.model[2] and "{成绩}" in self.model[2] and "{错题解析}" in self.model[2]:
+        if "{姓名}" in self.model_student[0] and "{成绩}" in self.model_student[0] and "{错题解析}" in self.model_student[0] and \
+           "{姓名}" in self.model_student[1] and "{成绩}" in self.model_student[1] and "{错题解析}" in self.model_student[1] and \
+           "{姓名}" in self.model_student[2] and "{成绩}" in self.model_student[2] and "{错题解析}" in self.model_student[2] and \
+           "{姓名}" in self.model_parents[0] and "{成绩}" in self.model_parents[0] and "{错题解析}" in self.model_parents[0] and \
+           "{姓名}" in self.model_parents[1] and "{成绩}" in self.model_parents[1] and "{错题解析}" in self.model_parents[1] and \
+           "{姓名}" in self.model_parents[2] and "{成绩}" in self.model_parents[2] and "{错题解析}" in self.model_parents[2]:
             return True
         else:
             return False
@@ -148,16 +154,16 @@ class ReadExcel:
         return error_rows
 
     def check_wechat(self):
-        if not (self.wechat_ws["A1"].value == "姓名" and self.wechat_ws["B1"].value == "微信号"):
-            raise WeChatError("WeChat表错误：请检查WeChat表第一行是否包含姓名，微信号")
+        if not (self.wechat_ws["A1"].value == "姓名" and self.wechat_ws["B1"].value == "学生" and self.wechat_ws["C1"].value == "家长"):
+            raise WeChatError("WeChat表错误：请检查WeChat表第一行是否包含姓名，学生，家长")
 
         error_rows = []
         row_num = 2
         for row in self.wechat_ws.iter_rows(min_row=2, max_row=self.wechat_ws.max_row):
-            name, wechat_num = row
-            if not (name.value and wechat_num.value):
+            name, student, parents = row
+            if not (name.value and (student.value or parents.value)):                     # 判断是否有空行或者家长类型值不正确的情况
                 error_rows.append(str(row_num))
-            self.wechat[name.value] = str(wechat_num.value)
+            self.wechat[name.value] = tuple((self.type_change(student.value), self.type_change(parents.value)))
             row_num += 1
         return error_rows
 
@@ -190,8 +196,11 @@ class ReadExcel:
         return lack_student
 
     def generate_one_info(self, name, grade, error_nums, class_):
+        model_index = None
         if len(name) == 3:
-            name = name[1:]
+            temp_name = name[1:]
+        else:
+            temp_name = name
         comprehension = ""
         if class_ == 1:
             for num in error_nums:
@@ -200,11 +209,21 @@ class ReadExcel:
             for num in error_nums:
                 comprehension += ("{}:{}".format(num, self.comprehension2[num] + "\n"))
         if grade >= 10:
-            return self.model[0].format(姓名=name, 成绩=grade, 错题解析=comprehension)
+            model_index = 0
         elif grade >= 7:
-            return self.model[1].format(姓名=name, 成绩=grade, 错题解析=comprehension)
+            model_index = 1
         else:
-            return self.model[2].format(姓名=name, 成绩=grade, 错题解析=comprehension)
+            model_index = 2
+
+        student = None
+        parents = None
+
+        if self.wechat[name][0]:
+            student = self.model_student[model_index].format(姓名=temp_name, 成绩=grade, 错题解析=comprehension)
+        if self.wechat[name][1]:
+            parents = self.model_parents[model_index].format(姓名=temp_name, 成绩=grade, 错题解析=comprehension)
+
+        return tuple((student, parents))
 
     def generate_all_info(self):
         for name in self.grade1:
@@ -212,6 +231,11 @@ class ReadExcel:
         for name in self.grade2:
             self.all_info[name] = self.generate_one_info(name=name, grade=self.grade2[name][0], error_nums=self.grade2[name][1], class_=2)
 
+    @staticmethod
+    def type_change(key):
+        if type(key) == "int":
+            return str(key)
+        return key
 
 if __name__ == '__main__':
     r = ReadExcel("test.xlsx")
