@@ -10,14 +10,15 @@ class CLI:
         self.path = Path("/Users/lureiny/Desktop/xueersi")
         self.data = None
         self.root = Path.home()
-        self.file_path_get()
 
+        self.last_file = None                          # 存放上一次读取的文件
         self.index = dict()                            # 存放索引
         self.sended = set()                            # 存放已经发送的
         self.sending = set()                           # 存放将要发送的
-        self.num_student = len(self.data.all_info)
+        self.sended_name = set()                       # 存放发送过的学生名字
+        self.num_student = None
 
-        self.make_index()
+        self.file_path_get()
 
     def check_root(self, path):
         if path.parent.parts[:3] == self.root.parts:
@@ -45,6 +46,10 @@ class CLI:
             print("\033[0;30;41m{}\033[0m".format("请输入数字"))
             print()
             return False
+
+    def back_up_sended(self):
+        for index in self.sended:
+            self.sended_name.add(self.index[index])
 
     def file_path_get(self):
         if self.path is None or not self.path.exists():
@@ -94,13 +99,27 @@ class CLI:
                 continue
             else:
                 self.file = dir_list[index]
+
                 with open(__file__, "r") as file:
                     temp = file.read()
                 temp = temp.split("\n")
                 temp[9] = temp[9].replace(temp[9][temp[9].index("="):], "= Path(\"{}\")".format(self.path))
                 with open(__file__, "w") as file:
                     file.write("\n".join(temp))
+
+                self.back_up_sended()
+
                 if self.read_file():
+                    self.make_index()
+                    self.num_student = len(self.data.all_info)
+                    if self.file == self.last_file:
+                        for index in self.index:
+                            if self.index[index] in self.sended_name:
+                                self.sending.remove(index)
+                                self.sended.add(index)
+                    else:
+                        self.sended = set()
+                    self.last_file = self.file
                     break
                 else:
                     dir_list.clear()
@@ -162,14 +181,14 @@ class CLI:
         sign = True if self.data.wechat[student][0] and self.data.wechat[student][1] else False
         if self.data.wechat[student][0]:
             self.generate_applescript(self.data.wechat[student][0], self.data.all_info[student][0], auto=auto)
-            self.run_applescript()
+            # self.run_applescript()
 
         if sign and not auto:
             input("敲击回车开始给家长发送\n")
 
         if self.data.wechat[student][1]:
             self.generate_applescript(self.data.wechat[student][1], self.data.all_info[student][1], auto=auto)
-            self.run_applescript()
+            # self.run_applescript()
 
     def auto_send(self):
         try:
@@ -215,6 +234,7 @@ class CLI:
 
     def make_index(self):
         index = 1
+        self.index.clear()
         for student in self.data.all_info:
             self.sending.add(index)
             self.index[index] = student
@@ -251,7 +271,12 @@ if __name__ == '__main__':
     while True:
         cli.list_student()
         try:
-            index = int(input("请输出学生的序号：\n"))
+            index = input("请输出学生的序号：\n")
+            if index == "r":
+                cli.file_path_get()
+                continue
+            else:
+                index = int(index)
         except ValueError:
             print("\033[0;30;41m{}\033[0m".format("请输入数字"))
             print()
