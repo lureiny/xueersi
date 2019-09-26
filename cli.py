@@ -59,7 +59,7 @@ class CLI:
         else:
             self.check_root(self.path)
 
-        output = "{0:<25}"
+        output = "{0:<20}"
 
         dir_list = dict()
         while True:
@@ -82,7 +82,7 @@ class CLI:
                     temp_num = 1
                     print()
 
-            print("\n\n")
+            print("\n")
 
             index = False
 
@@ -181,14 +181,14 @@ class CLI:
         sign = True if self.data.wechat[student][0] and self.data.wechat[student][1] else False
         if self.data.wechat[student][0]:
             self.generate_applescript(self.data.wechat[student][0], self.data.all_info[student][0], auto=auto)
-            # self.run_applescript()
+            self.run_applescript()
 
         if sign and not auto:
             input("敲击回车开始给家长发送\n")
 
         if self.data.wechat[student][1]:
             self.generate_applescript(self.data.wechat[student][1], self.data.all_info[student][1], auto=auto)
-            # self.run_applescript()
+            self.run_applescript()
 
     def auto_send(self):
         try:
