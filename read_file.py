@@ -1,5 +1,6 @@
 from openpyxl import load_workbook
 from error import ReadError, GradeError, ComprehensionError, ModelError, WeChatError
+from env import PASS_LINE
 
 
 class ReadExcel:
@@ -210,7 +211,7 @@ class ReadExcel:
                 comprehension += ("{}:{}".format(num, self.comprehension2[num] + "\n"))
         if grade >= 10:
             model_index = 0
-        elif grade >= 7:
+        elif grade >= PASS_LINE:
             model_index = 1
         else:
             model_index = 2
